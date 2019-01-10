@@ -4,3 +4,4 @@ config:
   requester_mapping:
     requester1: Saml2 # map SAML entity with entity id 'requester1' to backend with name 'SAML2'
     requester2: openid_connect # map OIDC RP with client id 'requester2' to backend with name 'openid_connect'
+    default: Saml2 # default catch-all mapping for requesters not otherwise listed explicitly

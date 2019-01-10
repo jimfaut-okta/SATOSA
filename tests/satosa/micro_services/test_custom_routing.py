@@ -5,7 +5,8 @@ import pytest
 from satosa.context import Context
 from satosa.exception import SATOSAError, SATOSAConfigurationError
 from satosa.internal import InternalData
-from satosa.micro_services.custom_routing import DecideIfRequesterIsAllowed
+from satosa.micro_services.custom_routing import DecideIfRequesterIsAllowed, DecideBackendByRequester
+
 
 TARGET_ENTITY = "entity1"
 
@@ -16,6 +17,42 @@ def target_context(context):
     entityid_b64_str = urlsafe_b64encode(entityid_bytes).decode("utf-8")
     context.decorate(Context.KEY_TARGET_ENTITYID, entityid_b64_str)
     return context
+
+
+class TestDecideBackendByRequester:
+    def create_decide_service(self, mapping):
+        decide_service = DecideBackendByRequester(config=dict(requester_mapping=mapping), name="test_decide_service",
+                                                    base_url="https://satosa.example.com")
+        decide_service.next = lambda ctx, data: data
+        return decide_service
+
+    @pytest.mark.parametrize("requester,backend", [
+        ("example1", "Saml2"),
+        ("example2", "Saml2-default"),
+    ])
+    def test_decide_for_requester(self, target_context, requester, backend):
+        mapping = {
+            "example1": "Saml2",
+            "default": "Saml2-default"
+        }
+        decide_service = self.create_decide_service(mapping)
+
+        req = InternalData(requester=requester)
+        decide_service.process(target_context, req)
+        assert target_context.target_backend == backend
+
+    @pytest.mark.parametrize("requester,backend", [
+        ("example2", "Saml2-default"),
+    ])
+    def test_decide_for_missing_requester(self, target_context, requester, backend):
+        mapping = {
+            "example1": "Saml2",
+        }
+        decide_service = self.create_decide_service(mapping)
+
+        req = InternalData(requester=requester)
+        with pytest.raises(SATOSAConfigurationError):
+            decide_service.process(target_context, req)
 
 
 class TestDecideIfRequesterIsAllowed:
