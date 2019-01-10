@@ -31,14 +31,15 @@ class DecideBackendByRequester(RequestMicroService):
         :param context: request context
         :param data: the internal request
         """
-        if data.requester in self.requester_mapping :
-          context.target_backend = self.requester_mapping[data.requester]
-        elif "default" in self.requester_mapping :
-          logger.debug("Routing to default backend.")
-          context.target_backend = self.requester_mapping["default"]
-        else :
-          logger.error("No routing definition found.")
-          raise SATOSAConfigurationError("Unable to route request", "Requester mapping not found for {}".format(data.requester))
+        if data.requester in self.requester_mapping:
+            context.target_backend = self.requester_mapping[data.requester]
+        elif "default" in self.requester_mapping:
+            logger.debug("Routing to default backend.")
+            context.target_backend = self.requester_mapping["default"]
+        else:
+            logger.error("No routing definition found.")
+            raise SATOSAConfigurationError("Unable to route request",
+                                           "Requester mapping not found for {}".format(data.requester))
         return super().process(context, data)
 
 
